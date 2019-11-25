@@ -84,7 +84,7 @@ function modalPopup(ii) {
 	const modals = document.getElementsByClassName(`modal-container`)[0];
 	const currentUser = [...modals.children][ii];
 
-	modals.style.display = `block`;
+	modals.style.display = `flex`;
 	// remove any previous shown modal.
 	[...modals.children].forEach(child => {
 		child.style.display = `none`;
@@ -117,7 +117,7 @@ function search(e) {
 	// display or not display results of keyup/search
 	cards.forEach(card => {
 		if (filteredCards.includes(card)) {
-			card.closest(`.card`).style.display = `block`;
+			card.closest(`.card`).style.display = `flex`;
 		} else {
 			card.closest(`.card`).style.display = `none`;
 		}
