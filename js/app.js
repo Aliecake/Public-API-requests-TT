@@ -1,82 +1,96 @@
 const gallery = document.getElementById(`gallery`);
+// change employee count as needed.
+const currentEmployeeCount = 12;
 
 // reusable async/await
 async function fetchData(url) {
-	const res = await fetch(url);
-	const data = await res.json();
-	return data;
+	try {
+		const res = await fetch(url);
+		const data = await res.json();
+		return data;
+	} catch (err) {
+		throw err;
+	}
 }
 
 // IIFE Immediately invokes async fetch
 (async function fetchUsers() {
-	const allUsers = await fetchData(`https://randomuser.me/api/?results=12`);
+	const allUsers = await fetchData(`https://randomuser.me/api/?results=${currentEmployeeCount}`);
 	// .then
 	createCard(allUsers.results);
-
+	createModalContainer();
 	createModal(allUsers.results);
 })();
 
 function createCard(users) {
-	users.forEach(user => {
-		const html = `
-		<div class="card-img-container">
-			<img class="card-img" src="${user.picture.thumbnail}" alt="profile picture of ${user.name.first} ${user.name.last}">
-		</div>
-		<div class="card-info-container">
-			<h3 id="name" class="card-name cap">${user.name.first} ${user.name.last}</h3>
-			<p class="card-text">${user.email}</p>
-			<p class="card-text cap">${user.location.city}, ${user.location.state}</p>
-		</div>
-
-		`;
+	users.forEach((user, ii) => {
+		const html = cardHTML(user);
 		const div = document.createElement(`div`);
 		div.className = `card`;
-		div.setAttribute(`id`, `${user.login.uuid}`);
 		div.innerHTML += html;
+		div.addEventListener(`click`, e => modalPopup(ii));
 		gallery.appendChild(div);
 	});
 }
 
 // creating modal container, aria labels added for accessibility
 function createModal(users) {
-	users.forEach(user => {
-		const html = `
-		<div class="modal-container ${user.login.uuid}" tabindex="-1" aria-labelledby="Modal" aria-hidden="true">
-			<div class="modal" >
-			<button type="button" id="modal-close-btn" class="modal-close-btn">
-				<strong>X</strong>
-			</button>
-			<div class="modal-info-container">
-				<img
-				class="modal-img"
-				src="${user.picture.medium}"
-				alt="profile picture of ${user.name.first} ${user.name.last}"
-				/>
-				<h3 id="name" class="modal-name cap">${user.name.first} ${user.name.last}</h3>
-				<p class="modal-text">${user.email}</p>
-				<p class="modal-text cap">${user.location.city}</p>
-				<hr />
-				<p class="modal-text">${user.phone}</p>
-				<p class="modal-text">
-					${user.location.street.number} ${user.location.street.name},
-					${user.location.city}, ${user.location.state} ${user.location.postcode}
-					${user.location.country}</p>
-				<p class="modal-text">Birthday: ${birthdayFormatChange(user.dob.date)}</p>
-			</div>
-			<div class="modal-btn-container">
-				<button type="button" id="modal-prev" class="modal-prev btn">
-					Prev
-				</button>
-				<button type="button" id="modal-next" class="modal-next btn">
-					Next
-				</button>
-			</div>
-		</div>
-		</div>
-		`;
-		gallery.innerHTML += html;
+	const modalContainer = document.getElementsByClassName(`modal-container`)[0];
+	users.forEach((user, i) => {
+		const div = document.createElement(`div`);
+		const html = modalHTML(user);
+		div.className = `modal`;
+		div.innerHTML += html;
+		modalContainer.appendChild(div);
+		nextPrevButtonHandlers(users, i);
 	});
 }
+
+function createModalContainer() {
+	const div = document.createElement(`div`);
+	div.className = `modal-container`;
+	div.setAttribute(`tabindex`, `-1`);
+	div.setAttribute(`aria-labelledby`, `Modal`);
+	div.setAttribute(`aria-hidden`, `true`);
+	gallery.appendChild(div);
+}
+
+// Modal can be displayed when clicked
+function modalPopup(ii) {
+	const modals = document.getElementsByClassName(`modal-container`)[0];
+	const currentUser = [...modals.children][ii];
+
+	modals.style.display = `block`;
+	// remove any previous shown modal.
+	[...modals.children].forEach(child => {
+		child.style.display = `none`;
+	});
+	currentUser.style.display = `block`;
+}
+
+function nextPrevButtonHandlers(users, i) {
+	const buttons = [...document.getElementsByClassName(`modal-btn-container`)][i];
+
+	const prev = [...buttons.children][0];
+	const next = [...buttons.children][1];
+
+	if (i === 0) {
+		// allows return of last/first in array, regardless of length. More employees can be added.
+		prev.addEventListener(`click`, e => modalPopup(users.length + (i % users.length) - 1));
+		next.addEventListener(`click`, e => modalPopup((i + 1) % users.length));
+	} else {
+		prev.addEventListener(`click`, e => modalPopup(i - 1));
+		next.addEventListener(`click`, e => modalPopup((i + 1) % users.length));
+	}
+}
+
+// close button for modal card
+gallery.addEventListener(`click`, e => {
+	if (e.target.parentNode.id === `modal-close-btn`) {
+		e.target.closest(`.modal`).style.display = `none`;
+		e.target.closest(`.modal-container`).style.display = `none`;
+	}
+});
 
 // /////Helper functions
 function birthdayFormatChange(timestamp) {
@@ -84,18 +98,44 @@ function birthdayFormatChange(timestamp) {
 	return `${birthday.getMonth() + 1}/${birthday.getDate()}/${birthday.getFullYear()}`;
 }
 
-// close button for modal card
-gallery.addEventListener(`click`, e => {
-	if (e.target.parentNode.id === `modal-close-btn`) {
-		// modal container
-		e.target.parentNode.parentNode.parentNode.style.display = `none`;
-	}
-});
+function cardHTML(user) {
+	return `
+	<div class="card-img-container">
+		<img class="card-img" src="${user.picture.thumbnail}" alt="profile picture of ${user.name.first} ${user.name.last}">
+	</div>
+	<div class="card-info-container">
+		<h3 id="name" class="card-name cap">${user.name.first} ${user.name.last}</h3>
+		<p class="card-text">${user.email}</p>
+		<p class="card-text cap">${user.location.city}, ${user.location.state}</p>
+	</div>
+	`;
+}
 
-document.addEventListener(`click`, e => {
-	if (e.target.closest(`.card`)) {
-		const modals = document.getElementsByClassName(`modal-container`);
-		const userModal = [...modals].filter(modal => modal.classList.contains(e.target.closest(`.card`).id));
-		userModal[0].style.display = `block`;
-	}
-});
+function modalHTML(user) {
+	return `
+	<button type="button" id="modal-close-btn" class="modal-close-btn">
+		<strong>X</strong>
+	</button>
+	<div class="modal-info-container">
+		<img
+		class="modal-img"
+		src="${user.picture.medium}"
+		alt="profile picture of ${user.name.first} ${user.name.last}"
+		/>
+		<h3 id="name" class="modal-name cap">${user.name.first} ${user.name.last}</h3>
+		<p class="modal-text">${user.email}</p>
+		<p class="modal-text cap">${user.location.city}</p>
+		<hr />
+		<p class="modal-text">${user.phone}</p>
+		<p class="modal-text">
+			${user.location.street.number} ${user.location.street.name},
+			${user.location.city}, ${user.location.state} ${user.location.postcode}
+			${user.location.country}</p>
+		<p class="modal-text">Birthday: ${birthdayFormatChange(user.dob.date)}</p>
+	</div>
+	<div class="modal-btn-container">
+		<button type="button" id="modal-prev" class="modal-prev btn"> Prev </button>
+		<button type="button" id="modal-next" class="modal-next btn"> Next </button>
+	</div>
+`;
+}

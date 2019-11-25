@@ -138,6 +138,7 @@ header h1 {
 }
 
 .modal {
+  display: none;
   position: relative;
   width: 95%;
   max-width: 420px;
