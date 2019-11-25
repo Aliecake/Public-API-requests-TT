@@ -15,11 +15,12 @@ async function fetchData(url) {
 
 // IIFE Immediately invokes async fetch
 (async function fetchUsers() {
-	const allUsers = await fetchData(`https://randomuser.me/api/?results=${currentEmployeeCount}`);
+	const allUsers = await fetchData(`https://randomuser.me/api/?results=${currentEmployeeCount}&nat=us,au,gb,ca`);
 	// .then
 	createCard(allUsers.results);
 	createModalContainer();
 	createModal(allUsers.results);
+	createSearchBox();
 })();
 
 function createCard(users) {
@@ -54,7 +55,30 @@ function createModalContainer() {
 	div.setAttribute(`aria-hidden`, `true`);
 	gallery.appendChild(div);
 }
+function createSearchBox() {
+	const searchContainer = document.getElementsByClassName(`search-container`)[0];
 
+	const div = document.createElement(`div`);
+	const form = document.createElement(`form`);
+
+	const html = `
+			<input type="search" id="search-input" class="search-input" placeholder="Search...">
+			<input type="submit" value="&#x1F50D;" id="search-submit" class="search-submit">
+	`;
+	form.setAttribute(`action`, `#`);
+	form.setAttribute(`method`, `GET`);
+	form.innerHTML = html;
+	// both listeners included to prevent bugs (ie if user is using speech to text)
+	form.addEventListener(`keyup`, e => search(e));
+	form.addEventListener(`click`, e => search(e));
+	div.appendChild(form);
+	searchContainer.appendChild(div);
+}
+
+function birthdayFormatChange(timestamp) {
+	const birthday = new Date(timestamp);
+	return `${birthday.getMonth() + 1}/${birthday.getDate()}/${birthday.getFullYear()}`;
+}
 // Modal can be displayed when clicked
 function modalPopup(ii) {
 	const modals = document.getElementsByClassName(`modal-container`)[0];
@@ -83,7 +107,22 @@ function nextPrevButtonHandlers(users, i) {
 		next.addEventListener(`click`, e => modalPopup((i + 1) % users.length));
 	}
 }
+function search(e) {
+	e.preventDefault();
+	const input = document.getElementById(`search-input`);
+	const searchVal = input.value.toLowerCase();
 
+	const cards = [...document.getElementsByClassName(`card-name`)];
+	const filteredCards = cards.filter(card => card.innerText.toLowerCase().includes(searchVal));
+	// display or not display results of keyup/search
+	cards.forEach(card => {
+		if (filteredCards.includes(card)) {
+			card.closest(`.card`).style.display = `block`;
+		} else {
+			card.closest(`.card`).style.display = `none`;
+		}
+	});
+}
 // close button for modal card
 gallery.addEventListener(`click`, e => {
 	if (e.target.parentNode.id === `modal-close-btn`) {
@@ -91,12 +130,6 @@ gallery.addEventListener(`click`, e => {
 		e.target.closest(`.modal-container`).style.display = `none`;
 	}
 });
-
-// /////Helper functions
-function birthdayFormatChange(timestamp) {
-	const birthday = new Date(timestamp);
-	return `${birthday.getMonth() + 1}/${birthday.getDate()}/${birthday.getFullYear()}`;
-}
 
 function cardHTML(user) {
 	return `
