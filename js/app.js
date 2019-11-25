@@ -4,13 +4,14 @@ const currentEmployeeCount = 12;
 
 // reusable async/await
 async function fetchData(url) {
+	let data;
 	try {
 		const res = await fetch(url);
-		const data = await res.json();
-		return data;
+		data = await res.json();
 	} catch (err) {
 		throw err;
 	}
+	return data;
 }
 
 // IIFE Immediately invokes async fetch
