@@ -1,3 +1,4 @@
 .eslintrc
 .vscode
 /mockups/
+node_modules
